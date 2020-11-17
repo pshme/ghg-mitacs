@@ -1,6 +1,6 @@
-#define mqPin 0
+#define mqPin 6
 #define targetGas "CO"
-#define gasRes 11.7
+#define gasRes 27.0
 #define totalRes 4.97
 #define terminalRes 3.3
 

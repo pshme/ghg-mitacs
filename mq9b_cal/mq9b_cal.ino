@@ -1,4 +1,4 @@
-#define mqPin 0
+#define mqPin 6
 #define airConvert 1
 #define totalRes 4.97
 #define terminalRes 3.3

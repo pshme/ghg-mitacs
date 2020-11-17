@@ -1,5 +1,5 @@
 /*
-MPL115A1 sparkfun breakout baropressure meter
+MPL115A1
  SDN       : pin 7
  CSN       : pin 10
  SDI/MOSI  : pin 11
@@ -12,8 +12,12 @@ MPL115A1 sparkfun breakout baropressure meter
 #include <Wire.h>
 #include <ezButton.h>
 #include "SparkFun_SCD30_Arduino_Library.h"
+
 SCD30 airSensor;
 
+//***************************************************************
+//MPL115A1 Arduino Code by huinink
+//https://forum.sparkfun.com/viewtopic.php?t=23965
 #define PRESH  0x80
 #define PRESL 0x82
 #define TEMPH 0x84
@@ -31,12 +35,24 @@ SCD30 airSensor;
 #define CONVERT 0x24  
 
 #define chipSelectPin 10
-#define shutDown 7
+#define shutDown 9
+//***************************************************************
 
-#define buttonPin  0
-#define ledPinGreen  1
-#define ledPinRed 2
-#define ledPinBlue 3
+#define buttonPin  7
+#define ledPinGreen  2
+#define ledPinRed 4
+#define ledPinBlue 0
+
+#define mq9bpin 6
+#define mq137pin 8
+#define mq4pin 9
+#define mq131pin 7
+
+//               n--m--sensorRes--totalRes--terminalRes   
+const float mq4[] = {1/0.621,8.0933,35.0,15.17,10.0};
+const float mq137[] = {1/0.0265,0.5845,38.9,4.97,3.3};
+const float mq9b[] = {1/0.542,0.8239,27.0,4.97,3.3};
+const float mq131[] = {1/0.4493,0.3579,4195,1530,1000};
 
 const int chipSelect = BUILTIN_SDCARD;
 
@@ -46,7 +62,6 @@ int ledState = LOW;
 int lastButtonState;
 int currentButtonState;
 
-
 float A0_;
 float B1_;
 float B2_;
@@ -55,16 +70,23 @@ float C12_;
 unsigned long previousTime = 0;
 
 void setup() 
-{
+{ 
   Serial.begin(115200);
   SPI.begin(); 
   Wire.begin();
   SD.begin(chipSelect);
   airSensor.begin();
 
+  pinMode(mq9bpin, INPUT);
+  pinMode(mq137pin, INPUT);
+  pinMode(mq4pin, INPUT);
+  pinMode(mq131pin, INPUT);
+
+  analogReadResolution(12);
+
   pinMode(chipSelect, OUTPUT);
   
-  // initalize the data ready and chip select pins:
+  //initializing CS and SDN pins
   pinMode(shutDown, OUTPUT);
   digitalWrite(shutDown, HIGH);
   pinMode(chipSelectPin, OUTPUT);
@@ -82,10 +104,13 @@ void setup()
   currentButtonState = LOW;
 
   airSensor.setMeasurementInterval(2); //in seconds
-  airSensor.setAltitudeCompensation(30); //in metres
-  airSensor.setAmbientPressure(835); //in mBar
-  
-  // read registers that contain the chip-unique parameters to do the math
+  airSensor.setAltitudeCompensation(50); //in metres
+  airSensor.setAmbientPressure(1000); //in mBar
+  airSensor.setTemperatureOffset(5);
+
+//***************************************************************
+//MPL115A1 Arduino Code by huinink
+//https://forum.sparkfun.com/viewtopic.php?t=23965
   unsigned int A0H = readRegister(A0MSB);
   unsigned int A0L = readRegister(A0LSB);
          A0_ = (A0H << 5) + (A0L >> 3) + (A0L & 0x07) / 8.0;
@@ -101,6 +126,7 @@ void setup()
   unsigned int C12H = readRegister(C12MSB);
   unsigned int C12L = readRegister(C12LSB);
           C12_ = ( ( ( C12H * 0x100 ) + C12L) / 16777216.0 )  ;
+//***************************************************************
 }
 
 void loop() 
@@ -110,7 +136,7 @@ void loop()
   lastButtonState = currentButtonState;
   currentButtonState = digitalRead(buttonPin);
 
-  unsigned long currentTime = millis();
+  unsigned long currentTime = millis(); //lasts up to 50 days until overflow occurs 
 
   if (button.isPressed())
   {
@@ -121,56 +147,137 @@ void loop()
 
   if ((currentTime - previousTime) == 2000 || (currentTime - previousTime) > 2000)
   {
-  if (ledState)
-  {
-     File dataFile = SD.open("baro.txt", FILE_WRITE);
+    if (ledState)
+    {
+       File dataFile = SD.open("baro.txt", FILE_WRITE);
 
-     if (dataFile)
-     {
-          digitalWrite(ledPinBlue,HIGH);
-          Serial.print(baropPessure());
-          Serial.print(",");
-          Serial.print(airSensor.getCO2());
-          Serial.print(",");
-          Serial.print(airSensor.getTemperature());
-          Serial.print(",");
-          Serial.print(airSensor.getHumidity());
-          Serial.println(",");
-          dataFile.print(baropPessure());
-          dataFile.print(",");
-          dataFile.print(airSensor.getCO2());
-          dataFile.print(",");
-          dataFile.print(airSensor.getTemperature());
-          dataFile.print(",");
-          dataFile.print(airSensor.getHumidity());
-          dataFile.println(",");
-          dataFile.close();
-          digitalWrite(ledPinBlue,LOW);
-         }
-
-         else{
-          digitalWrite(ledPinGreen,LOW);
-          while(!dataFile)
-          {
-            digitalWrite(ledPinRed,HIGH);
-            digitalWrite(ledPinGreen,HIGH);
+       if ((int)ozone() == 0)
+       {
+          digitalWrite(ledPinRed, HIGH);
+       }
+  
+       if (dataFile)
+       {
+            //Print to serial display
             digitalWrite(ledPinBlue,HIGH);
-            delay(200);
-            digitalWrite(ledPinRed,LOW);
-            digitalWrite(ledPinGreen,LOW);
+            Serial.print(baroPressure());
+            Serial.print(",");
+            Serial.print(airSensor.getCO2(),1);
+            Serial.print(",");
+            Serial.print(airSensor.getTemperature(),1);
+            Serial.print(",");
+            Serial.print(airSensor.getHumidity(),1);
+            Serial.print(",");
+            Serial.print(methane());
+            Serial.print(",");
+            Serial.print(monoxide());
+            Serial.print(",");
+            Serial.print(ammonia());
+            Serial.print(",");
+            Serial.print(ozone());
+            Serial.println(",");
+  
+            //Write to SD Card
+            dataFile.print(baroPressure());
+            dataFile.print(",");
+            dataFile.print(airSensor.getCO2(),1);
+            dataFile.print(",");
+            dataFile.print(airSensor.getTemperature(),1);
+            dataFile.print(",");
+            dataFile.print(airSensor.getHumidity(),1);
+            dataFile.print(",");
+            dataFile.print(methane());
+            dataFile.print(",");
+            dataFile.print(monoxide());
+            dataFile.print(",");
+            dataFile.print(ammonia());
+            dataFile.print(",");
+            dataFile.print(ozone());
+            dataFile.println(",");
+            dataFile.close();
             digitalWrite(ledPinBlue,LOW);
-            delay(200);
-          }
-         }
-            
-            
-            
-      }
-      previousTime = currentTime;
-  }
+           }
+  
+           else
+           {
+              digitalWrite(ledPinGreen,LOW);
+              
+              while(!dataFile)
+              {
+                digitalWrite(ledPinRed,HIGH);
+                digitalWrite(ledPinGreen,HIGH);
+                digitalWrite(ledPinBlue,HIGH);
+                delay(200);
+                digitalWrite(ledPinRed,LOW);
+                digitalWrite(ledPinGreen,LOW);
+                digitalWrite(ledPinBlue,LOW);
+                delay(200);
+              }
+           }        
+        }
+        previousTime = currentTime;
+    }
 }  
 
-//Read registers
+double methane()
+{
+  const float n = 1/0.621; //power
+  const float m = 8.0933; //numerator
+  float sensor_analog = analogRead(mq4pin); //reading analog value from pin 0
+  float sensor_voltage = sensor_analog*(3.3/4095.0); //ADC conversion
+  float rs_target_gas = (5.0*10/sensor_voltage)-15.17; //calculation of resistance using voltage divider
+  float ratio = rs_target_gas/35.0; //ratio rs/r0
+
+  double ppm = pow((m/ratio),n);
+  return ppm;
+}
+
+double monoxide()
+{
+  const float n = 1/0.542; //power
+  const float m = 0.8239; //numerator
+  
+  float sensor_analog = analogRead(mq9bpin); //reading analog value from pin 0
+  float sensor_voltage = sensor_analog*(3.3/4095.0); //ADC conversion
+  float rs_target_gas = (5.0*3.3/sensor_voltage)-4.97; //calculation of resistance using voltage divider
+  float ratio = rs_target_gas/27.0; //ratio rs/r0
+
+  double ppm = pow((m/ratio),n);
+  return ppm;
+  
+}
+
+double ammonia()
+{
+  const float n = 1/0.265; //power
+  const float m = 0.5845; //numerator
+  
+  float sensor_analog = analogRead(mq137pin); //reading analog value from pin 0
+  float sensor_voltage = sensor_analog*(3.3/4095.0); //ADC conversion
+  float rs_target_gas = (5.0*3.3/sensor_voltage)-4.97; //calculation of resistance using voltage divider
+  float ratio = rs_target_gas/38.9; //ratio rs/r0
+
+  double ppm = pow((m/ratio),n);
+  return ppm;
+}
+
+double ozone()
+{
+  const float n = 1/0.4493; //power
+  const float m = 0.3579; //denominator
+  
+  float sensor_analog = analogRead(mq131pin); //reading analog value from pin 0
+  float sensor_voltage = sensor_analog*(3.3/4095.0); //ADC conversion
+  float rs_target_gas = (5.0*1000/sensor_voltage)-1530; //calculation of resistance using voltage divider
+  float ratio = rs_target_gas/4195; //ratio rs/r0
+
+  double ppb = pow((ratio/m),n);
+  return ppb;
+}
+
+//***************************************************************
+//MPL115A1 Arduino Code by huinink
+//https://forum.sparkfun.com/viewtopic.php?t=23965
 unsigned int readRegister(byte thisRegister ) 
 {
   unsigned int result = 0;   // result to return
@@ -182,8 +289,7 @@ unsigned int readRegister(byte thisRegister )
   return(result);
 }
 
-//read pressure
-float baropPessure()
+float baroPressure()
 {
   digitalWrite(chipSelectPin, LOW);
   delay(3);
@@ -208,11 +314,13 @@ float baropPessure()
       delay(3);
   digitalWrite(chipSelectPin, HIGH);
 
-  unsigned long press = ((presH *256) + presL)/64;
+  unsigned long pre = ((presH *256) + presL)/64;
   unsigned long temp  = ((tempH *256) + tempL)/64;
 
-  float pressure = A0_+(B1_+C12_*temp)*press+B2_*temp;
-  float preskPa = pressure*  (65.0/1023.0)+50.0;
+  float pressure = A0_+(B1_+C12_*temp)*pre+B2_*temp;
+  float baro = pressure*  (65.0/1023.0)+50.0;
 
-  return(preskPa);
+  return(baro);
 }
+
+//***************************************************************
