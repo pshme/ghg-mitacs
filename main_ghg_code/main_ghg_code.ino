@@ -127,6 +127,10 @@ void setup()
   unsigned int C12L = readRegister(C12LSB);
           C12_ = ( ( ( C12H * 0x100 ) + C12L) / 16777216.0 )  ;
 //***************************************************************
+
+File dataFile = SD.open("BARO.txt", FILE_WRITE);
+dataFile.println("raw_pressure,raw_co2,raw_temperature,raw_humidity,raw_methane,raw_ammonia,raw_monoxide,raw_ozone");
+dataFile.close();
 }
 
 void loop() 
@@ -149,7 +153,7 @@ void loop()
   {
     if (ledState)
     {
-       File dataFile = SD.open("baro.txt", FILE_WRITE);
+       File dataFile = SD.open("BARO.txt", FILE_WRITE);
 
        if ((int)ozone() == 0)
        {
@@ -192,8 +196,7 @@ void loop()
             dataFile.print(",");
             dataFile.print(ammonia());
             dataFile.print(",");
-            dataFile.print(ozone());
-            dataFile.println(",");
+            dataFile.println(ozone());
             dataFile.close();
             digitalWrite(ledPinBlue,LOW);
            }
