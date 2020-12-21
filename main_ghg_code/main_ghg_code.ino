@@ -104,9 +104,9 @@ void setup()
   currentButtonState = LOW;
 
   airSensor.setMeasurementInterval(2); //in seconds
-  airSensor.setAltitudeCompensation(50); //in metres
-  airSensor.setAmbientPressure(1000); //in mBar
-  airSensor.setTemperatureOffset(5);
+  airSensor.setAltitudeCompensation(1045); //in metres
+  airSensor.setAmbientPressure(900); //in mBar
+  airSensor.setTemperatureOffset(2);
 
 //***************************************************************
 //MPL115A1 Arduino Code by huinink
