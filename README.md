@@ -9,6 +9,7 @@ The prototype DAQ system uses the following components:
 * PJRC Teensy 4.1 Arduino-based microcontroller
 * Pololu 5V 2.5A Step-Down Regulator (D24V22F5)
 * Pololu 3.3V Step-Up/Step-Down Regulator (S7V8F3)
+* SparkFun Barometric Pressure Sensor Breakout (MPL115A1)
 * Sensirion SCD30 CO2, humidity, and temperature sensor
 * Winsen MQ-4 CH4 Sensor
 * Winsen MQ-9B CO and CH4 Sensor
