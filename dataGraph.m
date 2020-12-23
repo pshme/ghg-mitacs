@@ -1,4 +1,7 @@
-function dataGraph(time_frame,crt_data,smooth_factor,data_name, data_unit)
+function dataGraph(time_frame,crt_data,smooth_factor,data_name,data_unit)
+% dataGraph plots a graph given a time vector (time_frame), corrected data
+% vector (crt_data), a mean value (smooth_factor), the name of the data
+% (data_name), and units for the data (data_unit).
 
 figure;
 plot(time_frame,movmean(crt_data,smooth_factor),'DurationTickFormat','hh:mm:ss')

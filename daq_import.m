@@ -7,7 +7,7 @@ crt_ammonia = timeCorrect(raw_ammonia);
 crt_monoxide = timeCorrect(raw_monoxide);
 crt_ozone = timeCorrect(raw_ozone);
 
-average_scale = 60;
+average_scale = 250;
 time = seconds(0:1:length(crt_pressure)-1);
 
 dataGraph(time,crt_pressure,average_scale, 'Pressure', 'ppm');
