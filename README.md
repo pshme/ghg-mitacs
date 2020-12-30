@@ -36,7 +36,7 @@ To exit out of one of the four states, the button must be pressed again; however
 
 ### **Matlab Plotting**
 
-The Arduino code (*main_ghg_code.ino*) has been modified to first display a title for each column in the .txt file. This helps simplify the Matlab import process. Once a test has been logged to the SD card, the **Import Data** function can be used. It is important to make sure that the information is *delimited* by commas and that each column is imported to Workspace as a *column vector*. After importing the section, *daq_import.m* can be ran, can the graphs will be produced.
+The Arduino code (*main_ghg_code.ino*) has been modified to first display a title for each column in the .txt file. This helps simplify the Matlab import process. Once a test has been logged to the SD card, the **Import Data** function can be used. It is important to make sure that the information is *delimited* by commas and that each column is imported to Workspace as a **column vector**. After importing the section, *daq_import.m* can be ran, and the graphs will be produced. The graphs display the gas concentration, temperature, pressure, or humidity with respect to time which is converted from 2 second intervals to hours:minutes:seconds to make the graph more legible.
 
 ![Matlab plots](https://github.com/pshme/ghg-mitacs/blob/master/matlab_plots.PNG)
 
